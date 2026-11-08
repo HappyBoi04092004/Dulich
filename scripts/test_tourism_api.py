@@ -16,3 +16,4 @@ check(f'{base}/destinations?province_id=phutho', 'Destinations in Phú Thọ')
 check(f'{base}/cuisine?region=North', 'Cuisine in North')
 check(f'{base}/festivals?month_solar=4', 'Festivals in Month 4 (Solar)')
 check(f'{base}/costs/danang', 'Cost Guidelines for Đà Nẵng')
+

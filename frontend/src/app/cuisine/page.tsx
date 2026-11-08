@@ -275,3 +275,4 @@ export default function CuisinePage() {
     </div>
   );
 }
+

@@ -323,3 +323,4 @@ def get_system_logs():
             'system_tests': read_tail(system_log)
         }
     })
+
