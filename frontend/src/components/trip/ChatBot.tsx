@@ -146,13 +146,13 @@ export default function ChatBot({ currentTrip, onTripUpdate }: ChatBotProps) {
             }}
             className="text-white px-4 py-3.5 flex items-center justify-between rounded-t-3xl shadow-md border-b-2 border-pink-700"
           >
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white shadow-xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white shadow-xs flex-shrink-0">
                 <img src="/logo.jpg" alt="Logo" className="w-full h-full object-cover object-top" />
               </div>
-              <div>
-                <span className="font-black text-sm text-white drop-shadow-sm block leading-tight">Trợ lý AI Du lịch Việt Nam</span>
-                <span className="text-[10px] text-pink-100 font-bold block">● Trực tuyến</span>
+              <div className="min-w-0">
+                <span className="font-black text-sm text-white drop-shadow-sm block leading-tight whitespace-nowrap">Trợ lý AI Du lịch Việt Nam</span>
+                <span className="text-[10px] text-pink-100 font-bold block whitespace-nowrap mt-0.5">● Trực tuyến</span>
               </div>
             </div>
             <button

@@ -107,6 +107,7 @@ export function TripWizardProvider({ children }: { children: React.ReactNode }) 
         setState(prev => ({
           ...prev,
           ...parsed,
+          isMapFullscreen: false, // Map should always start in normal non-fullscreen mode
           selectedDestinations: validDests.length > 0 ? validDests : [VIETNAM_DESTINATIONS[0]],
           currentStep: parsed.currentStep || 1
         }));

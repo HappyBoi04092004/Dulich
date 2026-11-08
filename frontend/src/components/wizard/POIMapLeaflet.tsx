@@ -247,22 +247,44 @@ export default function POIMapLeaflet({
           onSelectPOI(poi);
         });
 
+      const categoryLabel =
+        isPharma
+          ? '💊 Nhà thuốc & Hiệu thuốc'
+          : isHosp
+          ? '🏥 Bệnh viện & Cấp cứu'
+          : isRest
+          ? '🍲 Quán ăn 5★ Google Maps'
+          : isHotel
+          ? '🏨 Khách sạn & Homestay'
+          : '⛽ Trạm xăng dầu';
+
       marker.bindPopup(`
-        <div style="font-family: sans-serif; padding: 4px; max-width: 240px;">
-          <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: ${isPharma ? '#e11d48' : '#be123c'}; margin-bottom: 2px;">
-            ${iconEmoji} ${isPharma ? 'Hiệu thuốc / Nhà thuốc' : isHosp ? 'Bệnh viện & Y tế' : poi.category}
+        <div style="font-family: sans-serif; padding: 6px; max-width: 260px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-bottom: 4px;">
+            <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: ${isPharma ? '#e11d48' : isHosp ? '#dc2626' : isRest ? '#ea580c' : isHotel ? '#4f46e5' : '#ca8a04'};">
+              ${categoryLabel}
+            </span>
+            <span style="background: #fef3c7; color: #b45309; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 4px; border: 1px solid #fde68a;">
+              ★ ${poi.rating || 4.9}
+            </span>
           </div>
-          <h4 style="margin: 0 0 4px; font-size: 13px; font-weight: bold; color: #111827;">${poi.name}</h4>
-          <p style="margin: 0 0 6px; font-size: 11px; color: #4b5563; line-height: 1.4;">📍 ${poi.address}</p>
-          ${poi.phone ? `<p style="margin: 0 0 6px; font-size: 11px; color: #be123c; font-weight: 600;">📞 ${poi.phone}</p>` : ''}
-          <div style="margin-top: 6px;">
+
+          <h4 style="margin: 0 0 4px; font-size: 13px; font-weight: 800; color: #0f172a; line-height: 1.3;">${poi.name}</h4>
+
+          ${poi.specialty ? `<p style="margin: 0 0 6px; font-size: 11px; color: #be123c; background: #fff1f2; padding: 3px 6px; border-radius: 6px; line-height: 1.3;">✨ ${poi.specialty}</p>` : ''}
+
+          <p style="margin: 0 0 4px; font-size: 11px; color: #475569; line-height: 1.35;">📍 ${poi.address}</p>
+
+          ${poi.phone ? `<p style="margin: 0 0 6px; font-size: 11px; color: #be123c; font-weight: bold;">📞 <a href="tel:${poi.phone}" style="color: #be123c; text-decoration: none;">${poi.phone}</a></p>` : ''}
+
+          <div style="margin-top: 8px;">
             <a
               href="https://www.google.com/maps/dir/?api=1&destination=${poi.lat},${poi.lng}"
               target="_blank"
               rel="noopener noreferrer"
-              style="display: inline-flex; align-items: center; gap: 4px; background: #e11d48; color: white; padding: 5px 10px; border-radius: 6px; font-size: 11px; text-decoration: none; font-weight: bold; box-shadow: 0 1px 4px rgba(0,0,0,0.15);"
+              style="display: flex; align-items: center; justify-content: center; gap: 6px; background: linear-gradient(135deg, #be123c, #e11d48); color: white; padding: 6px 12px; border-radius: 8px; font-size: 11px; text-decoration: none; font-weight: 800; box-shadow: 0 2px 6px rgba(190,18,60,0.3);"
             >
-              <span>Chỉ đường Google Maps</span>
+              <span>Chỉ đường trên Google Maps</span>
               <span>➔</span>
             </a>
           </div>

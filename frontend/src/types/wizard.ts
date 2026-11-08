@@ -120,6 +120,10 @@ export interface POIItem {
   distanceFromCenter?: string;
   phone?: string;
   openingHours?: string;
+  rating?: number;
+  reviewCount?: number;
+  specialty?: string;
+  provinceId?: string;
 }
 
 export interface TripWizardState {

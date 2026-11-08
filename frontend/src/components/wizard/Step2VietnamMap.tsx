@@ -615,8 +615,11 @@ export default function Step2VietnamMap() {
             />
           </div>
 
-          {/* Floating Bottom Drawer in Fullscreen Mode - Placed on the LEFT so it never overlaps the circular AI logo on the right */}
-          <div className="absolute bottom-5 left-3 sm:left-5 right-3 sm:right-auto sm:w-[420px] max-h-[380px] z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md p-4 sm:p-5 rounded-3xl border-2 border-pink-200/80 dark:border-pink-900/60 shadow-2xl overflow-y-auto space-y-3">
+          {/* Floating Bottom Drawer in Fullscreen Mode - Placed on the LEFT with clearance for the circular AI logo on the right */}
+          <div
+            id="fullscreen-destination-drawer"
+            className="absolute bottom-5 left-3 sm:left-5 right-20 sm:right-auto max-w-[calc(100vw-88px)] sm:w-[420px] max-h-[380px] z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md p-4 sm:p-5 rounded-3xl border-2 border-pink-200/80 dark:border-pink-900/60 shadow-2xl overflow-y-auto space-y-3"
+          >
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-pink-600 dark:text-pink-400">

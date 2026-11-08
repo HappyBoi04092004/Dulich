@@ -10,6 +10,7 @@ import {
   XMarkIcon,
   ArrowsPointingOutIcon,
   ArrowsPointingInIcon,
+  MinusIcon,
   ChatBubbleLeftRightIcon,
   ArrowPathIcon,
   CheckIcon,
@@ -463,10 +464,10 @@ export default function WizardAIChatbot() {
               backgroundImage: 'linear-gradient(135deg, #be123c 0%, #db2777 50%, #e11d48 100%)',
               color: '#ffffff'
             }}
-            className="flex items-center justify-between px-4 py-3.5 text-white flex-shrink-0 shadow-md border-b-2 border-pink-700"
+            className="flex items-center justify-between px-4 py-3 text-white flex-shrink-0 shadow-md border-b-2 border-pink-700 min-h-[64px]"
           >
-            <div className="flex items-center gap-2.5">
-              <div className="relative w-9 h-9 rounded-full ring-2 ring-white shadow-sm flex-shrink-0 overflow-hidden bg-rose-950">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="relative w-9 h-9 min-w-9 min-h-9 rounded-full ring-2 ring-white shadow-sm flex-shrink-0 overflow-hidden bg-rose-950">
                 <img
                   src="/logo.jpg"
                   alt="Logo Trợ lý AI"
@@ -474,18 +475,18 @@ export default function WizardAIChatbot() {
                 />
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-rose-900" />
               </div>
-              <div>
-                <h4 className="text-sm font-black leading-tight text-white drop-shadow-sm flex items-center gap-1.5">
+              <div className="min-w-0">
+                <h4 className="text-sm font-black leading-tight text-white drop-shadow-sm flex items-center gap-1.5 whitespace-nowrap">
                   <span>Trợ lý AI Du lịch Việt Nam</span>
                 </h4>
-                <div className="text-[11px] text-pink-100 flex items-center gap-1 font-extrabold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+                <div className="text-[11px] text-pink-100 flex items-center gap-1 font-extrabold whitespace-nowrap mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse flex-shrink-0" />
                   <span>Trực tuyến • Am hiểu 34 tỉnh thành</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-shrink-0">
               <button
                 type="button"
                 onClick={handleClearChat}
@@ -498,9 +499,9 @@ export default function WizardAIChatbot() {
                 type="button"
                 onClick={() => setIsOpen(false)}
                 className="p-1.5 hover:bg-white/20 active:bg-white/30 rounded-lg transition-colors text-white cursor-pointer"
-                title="Thu nhỏ về biểu tượng logo"
+                title="Thu nhỏ chatbox"
               >
-                <ArrowsPointingInIcon className="w-4 h-4 text-white" />
+                <MinusIcon className="w-4 h-4 text-white" />
               </button>
               <button
                 type="button"
