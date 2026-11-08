@@ -19,6 +19,7 @@ from agents.news_agent import news_agent
 from agents.weather_agent import weather_agent
 from agents.wiki_agent import add_wikipedia_links
 from auth_routes import auth_bp
+from tourism_routes import tourism_bp
 from ml import ExplorationBandit, ABTestingFramework
 from ml.ab_testing import Variant
 from models import db
@@ -57,14 +58,17 @@ if not DATABASE_URL:
 # Strip whitespace and newlines from DATABASE_URL
 DATABASE_URL = DATABASE_URL.strip()
 
-app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
 # Detect connection type: SQLite vs Supabase pooler (PgBouncer) vs direct PostgreSQL
 _is_sqlite = DATABASE_URL.startswith('sqlite')
 _is_pooler = 'pooler.supabase.com' in DATABASE_URL or ':6543/' in DATABASE_URL
 
 if _is_sqlite:
+    # Ensure relative sqlite path always resolves deterministically to backend/instance/
+    db_filename = os.path.basename(DATABASE_URL.replace('sqlite:///', ''))
+    backend_instance_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'instance')
+    os.makedirs(backend_instance_dir, exist_ok=True)
+    abs_db_path = os.path.join(backend_instance_dir, db_filename)
+    DATABASE_URL = f"sqlite:///{abs_db_path.replace(os.sep, '/')}"
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {}
 else:
     if _is_pooler:
@@ -90,6 +94,9 @@ else:
         **_pool_kwargs,
     }
 
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 # JWT configuration - require secret key, reduce token lifetime for security
 JWT_SECRET = os.getenv('JWT_SECRET_KEY', '').strip()
 if not JWT_SECRET or JWT_SECRET == 'your-secret-key-change-in-production':
@@ -103,6 +110,7 @@ jwt = JWTManager(app)
 
 # Register blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
+app.register_blueprint(tourism_bp, url_prefix='/api')
 
 PORT = int(os.getenv('PORT', 4000))
 

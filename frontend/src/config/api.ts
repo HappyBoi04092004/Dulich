@@ -37,4 +37,17 @@ export const API_ENDPOINTS = {
   updateTrip: (id: number) => `${API_URL}/api/auth/trips/${id}`,
   deleteTrip: (id: number) => `${API_URL}/api/auth/trips/${id}`,
   sharedTrip: (token: string) => `${API_URL}/api/auth/shared-trip/${token}`,
+
+  // Tourism & Master Platform endpoints
+  provinces: `${API_URL}/api/provinces`,
+  provinceDetail: (id: string) => `${API_URL}/api/provinces/${id}`,
+  destinations: `${API_URL}/api/destinations`,
+  destinationDetail: (id: string) => `${API_URL}/api/destinations/${id}`,
+  cuisines: `${API_URL}/api/cuisine`,
+  festivals: `${API_URL}/api/festivals`,
+  costs: (provinceId: string) => `${API_URL}/api/costs/${provinceId}`,
+  adminStats: `${API_URL}/api/admin/stats`,
+  adminDestinations: `${API_URL}/api/admin/destinations`,
+  adminDeleteDestination: (id: string) => `${API_URL}/api/admin/destinations/${id}`,
+  adminLogs: `${API_URL}/api/admin/logs`,
 };

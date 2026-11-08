@@ -96,3 +96,4 @@ with sync_playwright() as p:
     
     browser.close()
     print('ALL VERIFICATION CHECKS PASSED SUCCESSFULLY!')
+

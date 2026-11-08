@@ -70,3 +70,4 @@ with sync_playwright() as p:
 
     browser.close()
     print('Completed Step 5 POI visual validation!')
+

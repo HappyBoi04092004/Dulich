@@ -1940,25 +1940,26 @@ def to_ts_spots(spots, indent="    "):
     lines.append(f"{indent}]")
     return "".join(lines)
 
-# Read existing vietnamData.ts
-with open('d:/Dulich/frontend/src/data/vietnamData.ts', 'r', encoding='utf-8') as f:
-    content = f.read()
+if __name__ == '__main__':
+    # Read existing vietnamData.ts
+    with open('d:/Dulich/frontend/src/data/vietnamData.ts', 'r', encoding='utf-8') as f:
+        content = f.read()
 
-# For each province in CLUSTERS_DATA, replace its touristSpots
-for pid, spots in CLUSTERS_DATA.items():
-    # Find block for pid
-    pattern = rf"(id:\s*'{pid}'[\s\S]*?touristSpots:\s*)\[[\s\S]*?\](\s*\n\s*\}})"
-    match = re.search(pattern, content)
-    if match:
-        ts_spots = to_ts_spots(spots, indent="    ")
-        replacement = match.group(1) + ts_spots + match.group(2)
-        content = content[:match.start()] + replacement + content[match.end():]
-        print(f"Updated spots for {pid}")
-    else:
-        print(f"Warning: Could not match block for {pid}")
+    # For each province in CLUSTERS_DATA, replace its touristSpots
+    for pid, spots in CLUSTERS_DATA.items():
+        # Find block for pid
+        pattern = rf"(id:\s*'{pid}'[\s\S]*?touristSpots:\s*)\[[\s\S]*?\](\s*\n\s*\}})"
+        match = re.search(pattern, content)
+        if match:
+            ts_spots = to_ts_spots(spots, indent="    ")
+            replacement = match.group(1) + ts_spots + match.group(2)
+            content = content[:match.start()] + replacement + content[match.end():]
+            print(f"Updated spots for {pid}")
+        else:
+            print(f"Warning: Could not match block for {pid}")
 
-with open('d:/Dulich/frontend/src/data/vietnamData.ts', 'w', encoding='utf-8') as f:
-    f.write(content)
+    with open('d:/Dulich/frontend/src/data/vietnamData.ts', 'w', encoding='utf-8') as f:
+        f.write(content)
 
-print("Finished updating d:/Dulich/frontend/src/data/vietnamData.ts!")
+    print("Finished updating d:/Dulich/frontend/src/data/vietnamData.ts!")
 
