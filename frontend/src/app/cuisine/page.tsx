@@ -4,6 +4,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import MainNavbar from '@/components/navigation/MainNavbar';
 import { API_ENDPOINTS } from '@/config/api';
+import { VIETNAM_CUISINES_MASTER, MasterCuisineItem, FamousSpot } from '@/data/vietnamCuisinesMaster';
+import { VIETNAM_DESTINATIONS } from '@/data/vietnamData';
 import {
   MagnifyingGlassIcon,
   SparklesIcon,
@@ -15,55 +17,44 @@ import {
   FireIcon
 } from '@heroicons/react/24/outline';
 
-interface FamousSpot {
-  name: string;
-  address: string;
-  rating: number;
-  price?: string;
-}
+const ALL_PROVINCES_LIST = VIETNAM_DESTINATIONS.map(d => ({
+  id: d.id,
+  name: d.name,
+  region: d.region
+}));
 
-interface CuisineItem {
-  id: number;
-  province_id: string;
-  province_name: string;
-  name: string;
-  dish_type: string;
-  description: string;
-  price_range: string;
-  famous_spots: FamousSpot[];
-  is_gift_suitable: boolean;
-  image_url: string;
-}
+const POPULAR_PROVINCES = [
+  { id: 'All', name: 'Tất cả 34 tỉnh' },
+  { id: 'hanoi', name: 'TP. Hà Nội' },
+  { id: 'hue', name: 'TP. Huế' },
+  { id: 'danang', name: 'TP. Đà Nẵng' },
+  { id: 'tphcm', name: 'TP. Hồ Chí Minh' },
+  { id: 'cantho', name: 'TP. Cần Thơ' },
+  { id: 'ninhbinh', name: 'Ninh Bình' },
+  { id: 'haiphong', name: 'Hải Phòng' },
+  { id: 'laocai', name: 'Lào Cai (Sa Pa)' },
+  { id: 'angiang', name: 'An Giang' },
+  { id: 'camau', name: 'Cà Mau' },
+  { id: 'phutho', name: 'Phú Thọ' }
+];
 
 export default function CuisinePage() {
-  const [cuisines, setCuisines] = useState<CuisineItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [cuisines, setCuisines] = useState<MasterCuisineItem[]>(VIETNAM_CUISINES_MASTER);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState<'All' | 'North' | 'Central' | 'South'>('All');
-  const [onlyGifts, setOnlyGifts] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState<string>('All');
-  const [provincesList, setProvincesList] = useState<{ id: string; name: string }[]>([]);
+  const [onlyGifts, setOnlyGifts] = useState(false);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [cRes, pRes] = await Promise.all([
-          fetch(API_ENDPOINTS.cuisines),
-          fetch(API_ENDPOINTS.provinces)
-        ]);
+        const cRes = await fetch(API_ENDPOINTS.cuisines);
         const cData = await cRes.json();
-        const pData = await pRes.json();
-
-        if (cData.status === 'success' && cData.data) {
+        if (cData.status === 'success' && cData.data && cData.data.length > 0) {
           setCuisines(cData.data);
         }
-        if (pData.status === 'success' && pData.data) {
-          setProvincesList(pData.data.map((p: any) => ({ id: p.id, name: p.name })));
-        }
       } catch (err) {
-        console.error('Failed to load cuisines:', err);
-      } finally {
-        setLoading(false);
+        console.log('Using static cuisines master data');
       }
     }
     loadData();
@@ -71,14 +62,23 @@ export default function CuisinePage() {
 
   const filteredCuisines = useMemo(() => {
     return cuisines.filter(item => {
+      // Region filter
+      if (selectedRegion !== 'All') {
+        const prov = ALL_PROVINCES_LIST.find(p => p.id === item.province_id);
+        const itemRegion = (item as any).region || prov?.region || 'North';
+        if (itemRegion !== selectedRegion) return false;
+      }
+
       // Province filter
       if (selectedProvince !== 'All' && item.province_id !== selectedProvince) {
         return false;
       }
+
       // Gift filter
       if (onlyGifts && !item.is_gift_suitable) {
         return false;
       }
+
       // Search query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -87,9 +87,10 @@ export default function CuisinePage() {
         const matchDesc = item.description && item.description.toLowerCase().includes(q);
         return matchName || matchProv || matchDesc;
       }
+
       return true;
     });
-  }, [cuisines, selectedProvince, onlyGifts, searchQuery]);
+  }, [cuisines, selectedRegion, selectedProvince, onlyGifts, searchQuery]);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
@@ -101,42 +102,43 @@ export default function CuisinePage() {
           <div className="relative z-10 max-w-3xl space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/30 border border-pink-400/40 text-pink-200 text-xs font-black uppercase tracking-wider backdrop-blur-xs">
               <SparklesIcon className="w-4 h-4 text-pink-300" />
-              <span>FOOD & LOCAL CUISINE • 34 TỈNH THÀNH VIỆT NAM</span>
+              <span>FOOD & LOCAL CUISINE • TOÀN BỘ 34 TỈNH THÀNH</span>
             </div>
             <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
               Hương Vị Ẩm Thực & <span className="bg-gradient-to-r from-pink-300 via-rose-200 to-amber-200 bg-clip-text text-transparent">Quán Ăn 5 Sao Google Maps</span>
             </h1>
             <p className="text-xs sm:text-sm text-pink-100/90 leading-relaxed">
-              Khám phá hơn 300 món ngon nức tiếng trải dài từ Bắc chí Nam: Phở Bát Đàn, Bánh đa cua Hải Phòng, Bún bò giò heo Huế, Mì Quảng, Cơm tấm Sài Gòn, Lẩu mắm Cần Thơ cùng địa chỉ quán ăn được đánh giá 4.8 - 5.0 ⭐.
+              Khám phá hơn 300 món ăn đặc sản truyền thống tinh hoa của 34 tỉnh thành Việt Nam: Phở Bát Đàn, Bún chả Hàng Mành, Cơm hến Sông Hương, Mì Quảng, Bánh tráng cuốn thịt heo, Bánh xèo miền Tây, Lẩu cá hồi Sa Pa, Cua Cà Mau... Kèm địa chỉ quán ăn được đánh giá 5 sao uy tín trên Google Maps.
             </p>
           </div>
         </div>
 
-        {/* Filter Bar */}
-        <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+        {/* Filter Controls Bar */}
+        <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+          {/* Top row: Search and Counters */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Search Input */}
-            <div className="relative w-full md:w-88">
-              <MagnifyingGlassIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+            <div className="relative w-full md:w-96">
+              <MagnifyingGlassIcon className="w-5 h-5 text-slate-400 absolute left-3.5 top-3" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Tìm món ngon, đặc sản, tỉnh thành..."
-                className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all font-medium"
+                placeholder="Tìm món ngon, đặc sản (Phở, Bún chả, Cua Cà Mau...)"
+                className="w-full pl-11 pr-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all font-medium"
               />
             </div>
 
-            {/* Filters Right */}
-            <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-              {/* Province Dropdown */}
+            {/* Controls Right */}
+            <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-between md:justify-end">
+              {/* Province Dropdown with All 34 Provinces */}
               <select
                 value={selectedProvince}
                 onChange={(e) => setSelectedProvince(e.target.value)}
-                className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500 cursor-pointer"
               >
                 <option value="All">Tất cả 34 tỉnh thành</option>
-                {provincesList.map(p => (
+                {ALL_PROVINCES_LIST.map(p => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
@@ -145,7 +147,7 @@ export default function CuisinePage() {
               <button
                 type="button"
                 onClick={() => setOnlyGifts(!onlyGifts)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   onlyGifts
                     ? 'bg-rose-600 text-white shadow-xs'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
@@ -154,33 +156,74 @@ export default function CuisinePage() {
                 <GiftIcon className="w-4 h-4" />
                 <span>Đặc sản làm quà</span>
               </button>
+
+              <div className="text-xs font-black text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-pink-500 animate-pulse" />
+                <span><strong>{filteredCuisines.length}</strong> món</span>
+              </div>
             </div>
+          </div>
+
+          {/* Region Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar border-t border-slate-100 dark:border-slate-800 pt-3">
+            {[
+              { id: 'All', label: 'Tất cả vùng miền' },
+              { id: 'North', label: '🍜 Ẩm thực Miền Bắc' },
+              { id: 'Central', label: '🌶️ Ẩm thực Miền Trung & Tây Nguyên' },
+              { id: 'South', label: '🥥 Ẩm thực Miền Nam & Sông Nước' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => { setSelectedRegion(tab.id as any); setSelectedProvince('All'); }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                  selectedRegion === tab.id
+                    ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Quick Popular Provinces Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar pt-1">
+            <span className="text-[11px] font-bold text-slate-400 whitespace-nowrap mr-1">Tỉnh tiêu biểu:</span>
+            {POPULAR_PROVINCES.map(p => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setSelectedProvince(p.id)}
+                className={`px-3 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${
+                  selectedProvince === p.id
+                    ? 'bg-pink-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                }`}
+              >
+                {p.name}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Content Loading or Empty */}
-        {loading ? (
-          <div className="py-20 text-center space-y-3">
-            <div className="w-10 h-10 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-xs font-bold text-slate-500">Đang tải tinh hoa ẩm thực 34 tỉnh thành...</p>
-          </div>
-        ) : filteredCuisines.length === 0 ? (
+        {/* Cuisines Grid */}
+        {filteredCuisines.length === 0 ? (
           <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 p-8 space-y-2">
             <p className="text-sm font-bold text-slate-600 dark:text-slate-300">Không tìm thấy món ăn nào theo tiêu chí tìm kiếm</p>
             <button
-              onClick={() => { setSearchQuery(''); setSelectedProvince('All'); setOnlyGifts(false); }}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-pink-600 hover:underline"
+              onClick={() => { setSearchQuery(''); setSelectedRegion('All'); setSelectedProvince('All'); setOnlyGifts(false); }}
+              className="px-4 py-2 rounded-xl text-xs font-bold text-pink-600 hover:underline cursor-pointer"
             >
-              Đặt lại toàn bộ bộ lọc
+              Đặt lại toàn bộ bộ lọc để xem toàn bộ 304 món
             </button>
           </div>
         ) : (
-          /* Dishes Grid */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCuisines.map(c => (
               <div
                 key={c.id}
-                className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-slate-200 dark:border-slate-800 hover:border-pink-400 dark:hover:border-pink-600 transition-all duration-300 shadow-sm hover:shadow-xl flex flex-col justify-between overflow-hidden p-5 space-y-4"
+                className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-slate-200 dark:border-slate-800 hover:border-pink-500 dark:hover:border-pink-500 transition-all duration-300 shadow-sm hover:shadow-xl flex flex-col justify-between overflow-hidden p-5 space-y-4"
               >
                 {/* Header Information */}
                 <div className="space-y-3">
@@ -237,14 +280,14 @@ export default function CuisinePage() {
                           </div>
 
                           <div className="flex items-center gap-1.5 flex-shrink-0">
-                            <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-black">
+                            <span className="px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 text-[10px] font-black">
                               ⭐ {spot.rating}
                             </span>
                             <a
                               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.name + ' ' + spot.address)}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="p-1.5 hover:bg-pink-100 dark:hover:bg-pink-950 text-pink-600 rounded-lg transition-colors"
+                              className="p-1.5 hover:bg-pink-100 dark:hover:bg-pink-950 text-pink-600 rounded-lg transition-colors cursor-pointer"
                               title="Chỉ đường trên Google Maps"
                             >
                               <ArrowTopRightOnSquareIcon className="w-4 h-4" />
@@ -253,19 +296,11 @@ export default function CuisinePage() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-[11px] text-slate-400 italic">Liên hệ người bản địa hoặc hỏi Trợ lý AI để có địa chỉ quán gia truyền.</p>
+                      <div className="text-[11px] text-slate-400 italic">
+                        Các quán ăn truyền thống tại trung tâm {c.province_name}
+                      </div>
                     )}
                   </div>
-                </div>
-
-                {/* Bottom link to wizard */}
-                <div className="pt-2">
-                  <Link
-                    href="/"
-                    className="w-full py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-pink-50 dark:hover:bg-pink-950/60 text-slate-700 dark:text-slate-300 hover:text-pink-600 text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
-                  >
-                    <span>Lập chuyến đi thưởng thức {c.name}</span>
-                  </Link>
                 </div>
               </div>
             ))}
@@ -275,4 +310,3 @@ export default function CuisinePage() {
     </div>
   );
 }
-
