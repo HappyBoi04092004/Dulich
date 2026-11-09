@@ -84,3 +84,4 @@ with open('frontend/src/data/vietnamCuisinesMaster.ts', 'w', encoding='utf-8') a
     json.dump(out_cuisines, f, ensure_ascii=False, indent=2)
     f.write(';\n')
 print('Wrote frontend/src/data/vietnamCuisinesMaster.ts successfully!')
+
