@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
 import dynamic from 'next/dynamic';
 import axios from 'axios';
 import { API_ENDPOINTS, getAuthHeaders } from '@/config/api';
 import { ItineraryCard, BudgetCard, BookingsCard, WeatherCard, NewsCard, ChatBot } from '@/components/trip';
-import { AuthModal } from '@/components/auth';
 import { TripResponse } from '@/types';
 import {
   ArrowLeftIcon,
@@ -20,8 +18,10 @@ import {
   CloudIcon,
   NewspaperIcon,
   BookmarkIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
+import { exportItineraryToExcel } from '@/utils/excelExport';
 
 // Import MapEmbed dynamically to avoid SSR issues with Leaflet
 const MapEmbed = dynamic(() => import('@/components/trip/MapEmbed'), {
@@ -33,10 +33,8 @@ type TabType = 'itinerary' | 'budget' | 'bookings' | 'map' | 'weather' | 'news';
 
 export default function TripPage() {
   const router = useRouter();
-  const { user } = useAuth();
   const [tripData, setTripData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<TabType>('itinerary');
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [tripName, setTripName] = useState('');
   const [notes, setNotes] = useState('');
@@ -51,64 +49,88 @@ export default function TripPage() {
       // Set default trip name based on trip mode
       let defaultName;
       if (parsed.tripMode === 'multi') {
-        // Multi-country trip name
         const countryNames = parsed.countries?.map((c: any) => c.country).join(', ');
-        defaultName = `Multi-Country Trip: ${countryNames}`;
+        defaultName = `Chuyến đi: ${countryNames}`;
       } else {
-        // Single country trip name
         defaultName = parsed.locations && parsed.locations !== 'AI Selected'
-          ? `Trip to ${parsed.locations}`
-          : `Trip to ${parsed.country}`;
+          ? `Lịch trình du lịch ${parsed.locations}`
+          : `Lịch trình du lịch ${parsed.country || 'Việt Nam'}`;
       }
       setTripName(defaultName);
     }
   }, []);
 
-  const handleSaveTrip = async () => {
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
+  const handleExportExcel = () => {
+    if (!tripData) return;
+    const itn = tripData.result?.itinerary || tripData.itinerary || {};
+    exportItineraryToExcel({
+      tripName: tripName || `Lịch trình du lịch ${tripData.locations || 'Việt Nam'}`,
+      country: tripData.country || 'Vietnam',
+      locations: tripData.locations || 'Việt Nam',
+      startDate: tripData.startDate,
+      returnDate: tripData.returnDate,
+      totalDays: Number(tripData.days) || 1,
+      originCity: tripData.origin || 'Hà Nội',
+      tripPace: tripData.tripPace || 'balanced',
+      overallTransportMode: 'Xe du lịch / Trung chuyển',
+      itinerary: itn,
+      budget: tripData.result?.budget || tripData.budget
+    });
+  };
 
+  const handleSaveTrip = async () => {
     if (!tripName.trim()) {
-      alert('Please enter a trip name');
+      alert('Vui lòng nhập tên chuyến đi');
       return;
     }
 
     setIsSaving(true);
 
     try {
-      await axios.post(
-        API_ENDPOINTS.saveTrip,
-        {
-          trip_name: tripName,
-          country: tripData.country,
-          locations: tripData.locations,
-          days: tripData.days,
-          origin: tripData.origin,
-          start_date: tripData.startDate,
-          trip_pace: tripData.tripPace,
-          itinerary: tripData.result.itinerary,
-          budget: tripData.result.budget,
-          bookings: tripData.result.bookings,
-          mapData: tripData.result.mapData,
-          weather: tripData.result.weather,
-          news: tripData.result.news,
-          notes: notes
-        },
-        {
-          headers: {
-            ...getAuthHeaders()
-          }
-        }
-      );
+      const tripId = Date.now();
+      const newTrip = {
+        id: tripId,
+        trip_name: tripName,
+        country: tripData.country || 'Vietnam',
+        locations: tripData.locations || '',
+        days: tripData.days || 1,
+        origin: tripData.origin || 'Hà Nội',
+        start_date: tripData.startDate || '',
+        trip_pace: tripData.tripPace || 'balanced',
+        itinerary: tripData.result?.itinerary || tripData.itinerary || {},
+        budget: tripData.result?.budget || tripData.budget || {},
+        bookings: tripData.result?.bookings || {},
+        mapData: tripData.result?.mapData || {},
+        weather: tripData.result?.weather || {},
+        news: tripData.result?.news || [],
+        notes: notes,
+        is_favorite: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      // Save to localStorage
+      const existing = JSON.parse(localStorage.getItem('saved_trips_local') || '[]');
+      const filtered = existing.filter((t: any) => t.id !== tripId);
+      localStorage.setItem('saved_trips_local', JSON.stringify([newTrip, ...filtered]));
+
+      // Optionally call backend if available
+      try {
+        await axios.post(
+          API_ENDPOINTS.saveTrip,
+          newTrip,
+          { headers: getAuthHeaders(), timeout: 5000 }
+        );
+      } catch (e) {
+        console.log('Saved to localStorage successfully (backend optional)');
+      }
 
       setSaved(true);
       setShowSaveModal(false);
-      setTimeout(() => setSaved(false), 3000);
+      setTimeout(() => setSaved(false), 4000);
     } catch (error: any) {
       console.error('Save trip error:', error);
-      alert(error.response?.data?.error || 'Failed to save trip');
+      alert('Không thể lưu chuyến đi. Đã lưu vào bộ nhớ tạm.');
     } finally {
       setIsSaving(false);
     }
@@ -185,24 +207,35 @@ export default function TripPage() {
             </div>
             <div className="flex items-center gap-2">
               {saved && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-success/10 border border-success/20 rounded-lg text-success text-sm font-medium">
-                  <CheckCircleIcon className="w-4 h-4" />
-                  <span className="hidden sm:inline">Saved!</span>
+                <div className="flex items-center gap-2 px-3 py-2 bg-emerald-100 border border-emerald-300 dark:bg-emerald-950/60 dark:border-emerald-800 rounded-lg text-emerald-800 dark:text-emerald-200 text-xs font-bold">
+                  <CheckCircleIcon className="w-4 h-4 text-emerald-600" />
+                  <span className="hidden sm:inline">Đã lưu!</span>
                 </div>
               )}
               <button
+                type="button"
+                onClick={handleExportExcel}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer"
+                title="Tải file Excel Timeline (.xlsx)"
+              >
+                <ArrowDownTrayIcon className="w-4 h-4 text-emerald-100" />
+                <span>Xuất Excel (.xlsx)</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setShowSaveModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white rounded-lg text-sm font-semibold shadow-sm shadow-rose-600/35 transition-all cursor-pointer"
               >
                 <BookmarkIcon className="w-4 h-4" />
-                <span className="hidden sm:inline">Save Trip</span>
+                <span className="hidden sm:inline">Lưu chuyến đi</span>
               </button>
               <button
+                type="button"
                 onClick={() => router.push('/')}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all cursor-pointer"
               >
                 <ArrowLeftIcon className="w-4 h-4" />
-                <span className="hidden sm:inline">New Trip</span>
+                <span className="hidden sm:inline">Tạo chuyến mới</span>
               </button>
             </div>
           </div>
@@ -336,13 +369,6 @@ export default function TripPage() {
           </div>
         </div>
       )}
-
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        defaultMode="signup"
-      />
     </div>
   );
 }

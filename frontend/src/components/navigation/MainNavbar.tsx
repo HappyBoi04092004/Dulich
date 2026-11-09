@@ -3,9 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UserMenu } from '@/components/auth';
 import { ThemeToggle } from '@/components/ui';
-import { useAuth } from '@/context/AuthContext';
 import {
   MapIcon,
   GlobeAsiaAustraliaIcon,
@@ -14,9 +12,9 @@ import {
   CurrencyDollarIcon,
   BookOpenIcon,
   BookmarkIcon,
-  ShieldCheckIcon,
   Bars3Icon,
-  XMarkIcon
+  XMarkIcon,
+  PlusCircleIcon
 } from '@heroicons/react/24/outline';
 
 const NAV_LINKS = [
@@ -30,7 +28,6 @@ const NAV_LINKS = [
 
 export default function MainNavbar() {
   const pathname = usePathname();
-  const { user, isAdmin } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -64,7 +61,7 @@ export default function MainNavbar() {
         </div>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden xl:flex items-center gap-1.5">
+        <nav className="hidden xl:flex items-center gap-1">
           {NAV_LINKS.map(link => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -72,9 +69,9 @@ export default function MainNavbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black transition-all ${
                   isActive
-                    ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-sm shadow-pink-600/30 scale-102'
+                    ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-sm shadow-pink-600/30 font-black'
                     : 'text-slate-700 dark:text-slate-300 hover:text-pink-600 dark:hover:text-pink-400 hover:bg-pink-50/70 dark:hover:bg-pink-950/40'
                 }`}
               >
@@ -85,44 +82,41 @@ export default function MainNavbar() {
           })}
         </nav>
 
-        {/* Right Action Icons & Auth */}
+        {/* Right Action Icons & Theme Toggle */}
         <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/saved-trips"
-            className={`hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
               pathname === '/saved-trips'
-                ? 'bg-pink-600 text-white shadow-xs'
-                : 'text-pink-700 dark:text-pink-300 bg-pink-50 dark:bg-pink-950/60 hover:bg-pink-100 dark:hover:bg-pink-900/80 border border-pink-200 dark:border-pink-800'
+                ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-sm'
+                : 'text-pink-700 dark:text-pink-300 bg-pink-50 dark:bg-pink-950/60 hover:bg-pink-100 border border-pink-200 dark:border-pink-800'
             }`}
-            title="Xem các chuyến đi đã lưu"
+            title="Xem danh sách chuyến đi đã lưu"
           >
             <BookmarkIcon className="w-4 h-4 text-pink-600 dark:text-pink-400" />
-            <span className="hidden lg:inline">Chuyến đi đã lưu</span>
+            <span className="hidden sm:inline">Chuyến đi đã lưu</span>
           </Link>
 
-          {isAdmin && (
-            <Link
-              href="/admin"
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs ${
-                pathname === '/admin'
-                  ? 'bg-amber-600 text-white'
-                  : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700 hover:bg-amber-100'
-              }`}
-              title="Khu vực quản trị hệ thống"
-            >
-              <ShieldCheckIcon className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <span className="hidden sm:inline">Quản trị</span>
-            </Link>
-          )}
+          <Link
+            href="/"
+            style={{
+              backgroundColor: '#db2777',
+              backgroundImage: 'linear-gradient(135deg, #e11d48 0%, #db2777 50%, #ec4899 100%)',
+              color: '#ffffff'
+            }}
+            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-white shadow-md shadow-pink-900/30 hover:scale-105 transition-all cursor-pointer"
+          >
+            <PlusCircleIcon className="w-4 h-4" />
+            <span>Tạo chuyến đi</span>
+          </Link>
 
           <ThemeToggle />
-          <UserMenu />
 
           {/* Mobile Menu Toggle Button */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="xl:hidden p-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-950/50 hover:text-pink-600 transition-colors"
+            className="xl:hidden p-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-950/50 hover:text-pink-600 transition-colors cursor-pointer"
             aria-label="Toggle navigation menu"
           >
             {mobileMenuOpen ? (
@@ -168,11 +162,11 @@ export default function MainNavbar() {
             </Link>
 
             <Link
-              href="/logs"
+              href="/admin"
               onClick={() => setMobileMenuOpen(false)}
               className="text-[11px] font-semibold text-slate-500 hover:text-pink-600"
             >
-              📋 Nhật ký hệ thống
+              🛡️ Quản trị hệ thống
             </Link>
           </div>
         </div>
@@ -180,4 +174,3 @@ export default function MainNavbar() {
     </header>
   );
 }
-

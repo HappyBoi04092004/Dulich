@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { useTripWizard } from '@/context/TripWizardContext';
-import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
 import { API_ENDPOINTS, getAuthHeaders } from '@/config/api';
 import {
@@ -16,10 +15,12 @@ import {
   CheckCircleIcon,
   BookmarkIcon,
   ArrowLeftIcon,
-  CloudIcon
+  CloudIcon,
+  ArrowDownTrayIcon,
+  TableCellsIcon
 } from '@heroicons/react/24/outline';
-import { AuthModal } from '@/components/auth';
 import { formatVietnameseDate } from '@/utils/dateUtils';
+import { exportItineraryToExcel } from '@/utils/excelExport';
 
 export default function Step6ReviewConfirm() {
   const {
@@ -41,8 +42,6 @@ export default function Step6ReviewConfirm() {
     setIsGeneratingItinerary
   } = useTripWizard();
 
-  const { user } = useAuth();
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -133,35 +132,72 @@ export default function Step6ReviewConfirm() {
     }
   };
 
-  // Save trip to database
-  const handleSaveTrip = async () => {
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
+  // Export complete trip timeline to Excel file (.xlsx)
+  const handleExportExcel = () => {
+    exportItineraryToExcel({
+      tripName: `Lịch trình du lịch ${selectedDestinations.map(d => d.name).join(' - ') || 'Việt Nam'} (${totalDays} ngày)`,
+      country: 'Vietnam',
+      locations: selectedDestinations.map(d => d.name).join(', ') || 'Việt Nam',
+      startDate,
+      returnDate,
+      totalDays,
+      originCity,
+      tripPace,
+      overallTransportMode,
+      itinerary: generatedItinerary?.itinerary || {},
+      budget: generatedItinerary?.budget,
+      selectedDestinations,
+      selectedAttractions,
+      selectedSpecialties,
+      estimatedCostVND
+    });
+  };
 
+  // Save trip directly without requiring authentication
+  const handleSaveTrip = async () => {
     setIsSaving(true);
     setErrorMsg('');
 
     try {
-      const tripName = `Du lịch ${selectedDestinations.map(d => d.name).join(' - ')} (${totalDays} ngày)`;
-      await axios.post(
-        API_ENDPOINTS.saveTrip,
-        {
-          trip_name: tripName,
-          country: 'Vietnam',
-          locations: selectedDestinations.map(d => d.name).join(', '),
-          days: totalDays,
-          origin: originCity,
-          start_date: startDate,
-          trip_pace: tripPace,
-          itinerary: generatedItinerary?.itinerary || {},
-          budget: generatedItinerary?.budget || { total_estimated_vnd: estimatedCostVND },
-          notes: `Phương tiện: ${overallTransportMode}. Điểm đã chọn: ${selectedAttractions.map(a => a.name).join(', ')}`
-        },
-        { headers: getAuthHeaders() }
-      );
+      const tripId = Date.now();
+      const tripName = `Du lịch ${selectedDestinations.map(d => d.name).join(' - ') || 'Việt Nam'} (${totalDays} ngày)`;
+      const newTrip = {
+        id: tripId,
+        trip_name: tripName,
+        country: 'Vietnam',
+        locations: selectedDestinations.map(d => d.name).join(', '),
+        days: totalDays,
+        origin: originCity,
+        start_date: startDate,
+        return_date: returnDate,
+        trip_pace: tripPace,
+        itinerary: generatedItinerary?.itinerary || {},
+        budget: generatedItinerary?.budget || { total_estimated_vnd: estimatedCostVND },
+        notes: `Phương tiện: ${overallTransportMode}. Điểm đã chọn: ${selectedAttractions.map(a => a.name).join(', ')}`,
+        is_favorite: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      // Persist to local storage
+      const existing = JSON.parse(localStorage.getItem('saved_trips_local') || '[]');
+      const filtered = existing.filter((t: any) => t.id !== tripId);
+      localStorage.setItem('saved_trips_local', JSON.stringify([newTrip, ...filtered]));
+
+      // Optionally attempt backend sync if available
+      try {
+        await axios.post(
+          API_ENDPOINTS.saveTrip,
+          newTrip,
+          { headers: getAuthHeaders(), timeout: 5000 }
+        );
+      } catch (backendErr) {
+        // Backend optional, local save already succeeded
+        console.log('Saved to local storage (backend sync optional)');
+      }
+
       setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 6000);
     } catch (err: any) {
       console.error('Save trip error:', err);
       setErrorMsg('Không thể lưu chuyến đi. Vui lòng thử lại.');
@@ -349,7 +385,7 @@ export default function Step6ReviewConfirm() {
         </div>
       </div>
 
-      {/* Action Buttons: Generate Itinerary / Save Trip */}
+      {/* Action Buttons: Generate Itinerary / Save Trip / Export Excel */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
         <button
           type="button"
@@ -360,7 +396,7 @@ export default function Step6ReviewConfirm() {
             backgroundImage: 'linear-gradient(135deg, #e11d48 0%, #db2777 50%, #ec4899 100%)',
             color: '#ffffff'
           }}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-10 py-4 rounded-xl text-base font-black text-white shadow-xl shadow-pink-900/35 hover:shadow-2xl hover:scale-105 transition-all cursor-pointer"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl text-base font-black text-white shadow-xl shadow-pink-900/35 hover:shadow-2xl hover:scale-105 transition-all cursor-pointer"
         >
           {isGeneratingItinerary ? (
             <>
@@ -377,9 +413,24 @@ export default function Step6ReviewConfirm() {
 
         <button
           type="button"
+          onClick={handleExportExcel}
+          style={{
+            backgroundColor: '#059669',
+            backgroundImage: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+            color: '#ffffff'
+          }}
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl text-base font-black text-white shadow-lg shadow-emerald-900/25 hover:shadow-xl hover:scale-105 transition-all cursor-pointer"
+          title="Tải lịch trình về máy dạng bảng tính Excel (.xlsx)"
+        >
+          <ArrowDownTrayIcon className="w-5 h-5 text-emerald-100" />
+          <span>Xuất Timeline Excel (.xlsx)</span>
+        </button>
+
+        <button
+          type="button"
           disabled={isSaving}
           onClick={handleSaveTrip}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-sm font-bold bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm transition-all"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-sm font-bold bg-white dark:bg-gray-800 border-2 border-pink-300 dark:border-pink-800 text-pink-700 dark:text-pink-300 hover:bg-pink-50 dark:hover:bg-pink-950/40 shadow-sm transition-all cursor-pointer"
         >
           <BookmarkIcon className="w-4 h-4 text-pink-600" />
           <span>{isSaving ? 'Đang lưu...' : 'Lưu chuyến đi'}</span>
@@ -387,9 +438,9 @@ export default function Step6ReviewConfirm() {
       </div>
 
       {saveSuccess && (
-        <div className="p-4 rounded-xl bg-pink-50 dark:bg-pink-950/60 border border-pink-200 dark:border-pink-800 text-pink-800 dark:text-pink-200 text-sm font-semibold flex items-center justify-center gap-2">
+        <div className="p-4 rounded-xl bg-pink-50 dark:bg-pink-950/60 border-2 border-pink-300 dark:border-pink-800 text-pink-900 dark:text-pink-200 text-sm font-bold flex items-center justify-center gap-2 shadow-xs">
           <CheckCircleIcon className="w-5 h-5 text-pink-600" />
-          <span>Chuyến đi đã được lưu thành công vào tài khoản của bạn!</span>
+          <span>Lịch trình đã được lưu thành công vào thiết bị của bạn! Bạn có thể xem lại bất kỳ lúc nào tại mục &quot;Chuyến đi đã lưu&quot;.</span>
         </div>
       )}
 
@@ -401,19 +452,30 @@ export default function Step6ReviewConfirm() {
 
       {/* Generated Itinerary Display */}
       {generatedItinerary && (
-        <div className="mt-10 p-6 sm:p-8 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm space-y-6">
-          <div className="border-b border-gray-200 dark:border-gray-800 pb-4 flex items-center justify-between">
+        <div className="mt-10 p-6 sm:p-8 rounded-2xl bg-white dark:bg-gray-900 border-2 border-pink-200 dark:border-pink-900 shadow-md space-y-6">
+          <div className="border-b border-gray-200 dark:border-gray-800 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-pink-600">
                 Kế hoạch được tối ưu hóa
               </span>
-              <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white mt-1">
+              <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white mt-1">
                 Lịch trình chi tiết ngày theo ngày
               </h3>
             </div>
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-pink-100 text-pink-800 dark:bg-pink-950/80 dark:text-pink-200">
-              Đã tối ưu lộ trình TSP
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-colors cursor-pointer"
+                title="Tải lịch trình về máy dạng bảng tính Excel (.xlsx)"
+              >
+                <ArrowDownTrayIcon className="w-4 h-4" />
+                <span>Xuất Timeline Excel (.xlsx)</span>
+              </button>
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-pink-100 text-pink-800 dark:bg-pink-950/80 dark:text-pink-200 whitespace-nowrap">
+                Đã tối ưu lộ trình TSP
+              </span>
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -492,10 +554,6 @@ export default function Step6ReviewConfirm() {
           <span>Quay lại Bước 5</span>
         </button>
       </div>
-
-      {showAuthModal && (
-        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
-      )}
     </div>
   );
 }

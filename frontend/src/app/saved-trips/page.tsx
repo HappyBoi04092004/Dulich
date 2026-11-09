@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { API_ENDPOINTS, getAuthHeaders } from '@/config/api';
@@ -11,11 +10,14 @@ import {
   TrashIcon,
   HeartIcon,
   ArrowLeftIcon,
-  PlusIcon
+  PlusIcon,
+  ArrowDownTrayIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
+import { exportItineraryToExcel } from '@/utils/excelExport';
 
-interface SavedTrip {
+interface SavedTripItem {
   id: number;
   trip_name: string;
   country: string;
@@ -23,7 +25,10 @@ interface SavedTrip {
   days: number;
   origin?: string;
   start_date?: string;
+  return_date?: string;
   trip_pace?: string;
+  itinerary?: any;
+  budget?: any;
   notes?: string;
   is_favorite: boolean;
   created_at: string;
@@ -31,263 +36,273 @@ interface SavedTrip {
 }
 
 export default function SavedTripsPage() {
-  const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const [trips, setTrips] = useState<SavedTrip[]>([]);
+  const [trips, setTrips] = useState<SavedTripItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/');
+    loadSavedTrips();
+  }, []);
+
+  const loadSavedTrips = async () => {
+    setIsLoading(true);
+    setError('');
+
+    // 1. Read from localStorage first (works completely offline & zero login needed)
+    let localTrips: SavedTripItem[] = [];
+    try {
+      const stored = localStorage.getItem('saved_trips_local');
+      if (stored) {
+        localTrips = JSON.parse(stored);
+      }
+    } catch (e) {
+      console.warn('Could not parse local saved trips', e);
     }
 
-    if (user) {
-      fetchTrips();
-    }
-  }, [user, authLoading, router]);
-
-  const fetchTrips = async () => {
+    // 2. Try fetching from backend if accessible
     try {
       const response = await axios.get(API_ENDPOINTS.getTrips, {
-        headers: {
-          ...getAuthHeaders()
-        }
+        headers: getAuthHeaders(),
+        timeout: 4000
       });
-
-      setTrips(response.data.trips);
-    } catch (err: any) {
-      console.error('Fetch trips error:', err);
-      setError('Failed to load trips');
-    } finally {
-      setIsLoading(false);
+      if (response.data?.trips && Array.isArray(response.data.trips)) {
+        // Merge without duplicates
+        const existingIds = new Set(localTrips.map(t => t.id));
+        response.data.trips.forEach((t: SavedTripItem) => {
+          if (!existingIds.has(t.id)) {
+            localTrips.push(t);
+          }
+        });
+      }
+    } catch (err) {
+      // Backend not running or unauthenticated — local storage is primary
     }
+
+    // Sort by favorite first, then updated_at descending
+    localTrips.sort((a, b) => {
+      if (a.is_favorite === b.is_favorite) {
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      }
+      return a.is_favorite ? -1 : 1;
+    });
+
+    setTrips(localTrips);
+    setIsLoading(false);
   };
 
   const toggleFavorite = async (tripId: number, currentFavorite: boolean) => {
+    const updated = trips.map(t => t.id === tripId ? { ...t, is_favorite: !currentFavorite } : t);
+    setTrips(updated);
     try {
+      localStorage.setItem('saved_trips_local', JSON.stringify(updated));
       await axios.put(
         API_ENDPOINTS.updateTrip(tripId),
         { is_favorite: !currentFavorite },
-        {
-          headers: {
-            ...getAuthHeaders()
-          }
-        }
+        { headers: getAuthHeaders() }
       );
-
-      // Update local state
-      setTrips(trips.map(trip =>
-        trip.id === tripId ? { ...trip, is_favorite: !currentFavorite } : trip
-      ));
     } catch (err) {
-      console.error('Toggle favorite error:', err);
+      // Ignore backend error
     }
   };
 
   const deleteTrip = async (tripId: number) => {
-    if (!confirm('Are you sure you want to delete this trip?')) return;
+    if (!confirm('Bạn có chắc chắn muốn xóa chuyến đi này khỏi danh sách đã lưu?')) return;
+
+    const filtered = trips.filter(t => t.id !== tripId);
+    setTrips(filtered);
+    localStorage.setItem('saved_trips_local', JSON.stringify(filtered));
 
     try {
       await axios.delete(API_ENDPOINTS.deleteTrip(tripId), {
-        headers: {
-          ...getAuthHeaders()
-        }
+        headers: getAuthHeaders()
       });
-
-      setTrips(trips.filter(trip => trip.id !== tripId));
     } catch (err) {
-      console.error('Delete trip error:', err);
-      alert('Failed to delete trip');
+      // Ignore backend error
     }
   };
 
-  const viewTrip = async (tripId: number) => {
-    try {
-      const response = await axios.get(API_ENDPOINTS.getTrip(tripId), {
-        headers: {
-          ...getAuthHeaders()
-        }
-      });
-
-      const trip = response.data.trip;
-
-      // Store in session storage and navigate to trip page
-      const tripData = {
-        result: trip.data,
-        country: trip.country,
-        locations: trip.locations,
-        days: trip.days,
-        origin: trip.origin,
-        startDate: trip.start_date
-      };
-
-      sessionStorage.setItem('tripData', JSON.stringify(tripData));
-      router.push('/trip');
-    } catch (err) {
-      console.error('View trip error:', err);
-      alert('Failed to load trip');
-    }
+  const handleExportTripExcel = (trip: SavedTripItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    exportItineraryToExcel({
+      tripName: trip.trip_name,
+      country: trip.country,
+      locations: trip.locations,
+      startDate: trip.start_date,
+      returnDate: trip.return_date,
+      totalDays: trip.days,
+      originCity: trip.origin,
+      tripPace: trip.trip_pace,
+      itinerary: trip.itinerary || {},
+      budget: trip.budget
+    });
   };
 
-  if (authLoading || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-muted-foreground">Loading trips...</div>
-      </div>
-    );
-  }
+  const viewTrip = (trip: SavedTripItem) => {
+    const tripData = {
+      result: {
+        itinerary: trip.itinerary || {},
+        budget: trip.budget || {}
+      },
+      country: trip.country,
+      locations: trip.locations,
+      days: trip.days,
+      origin: trip.origin,
+      startDate: trip.start_date
+    };
 
-  if (!user) {
-    return null;
-  }
+    sessionStorage.setItem('tripData', JSON.stringify(tripData));
+    router.push('/trip');
+  };
 
   return (
-    <div className="min-h-screen bg-background py-12 px-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-10 px-4 sm:px-6">
+      <div className="max-w-7xl mx-auto space-y-8 animate-fadeIn">
         {/* Header */}
-        <div className="mb-10">
+        <div>
           <button
+            type="button"
             onClick={() => router.push('/')}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+            className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-pink-600 transition-colors mb-3 cursor-pointer"
           >
             <ArrowLeftIcon className="w-4 h-4" />
-            Back to Home
+            <span>Về trang chủ</span>
           </button>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-pink-200/80 dark:border-pink-900/60 pb-6">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-br from-foreground to-primary bg-clip-text text-transparent mb-2">
-                My Saved Trips
+              <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                Chuyến đi <span className="bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">đã lưu của bạn</span>
               </h1>
-              <p className="text-muted-foreground">
-                {trips.length} {trips.length === 1 ? 'trip' : 'trips'} saved
+              <p className="mt-1 text-sm font-semibold text-slate-600 dark:text-slate-400">
+                Lưu trữ tự động trên thiết bị của bạn. Hoàn toàn miễn phí, không yêu cầu đăng nhập.
               </p>
             </div>
 
             <button
+              type="button"
               onClick={() => router.push('/')}
-              className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white rounded-xl shadow-md shadow-rose-600/35 transition-all hover:scale-[1.02] cursor-pointer"
+              style={{
+                backgroundColor: '#db2777',
+                backgroundImage: 'linear-gradient(135deg, #e11d48 0%, #db2777 50%, #ec4899 100%)',
+                color: '#ffffff'
+              }}
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-black text-white shadow-lg shadow-pink-900/30 hover:scale-105 transition-all cursor-pointer"
             >
               <PlusIcon className="w-5 h-5" />
-              <span className="font-semibold">Plan New Trip</span>
+              <span>Lập lịch trình mới</span>
             </button>
           </div>
         </div>
 
-        {/* Error */}
-        {error && (
-          <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive">
-            {error}
+        {/* Content */}
+        {isLoading ? (
+          <div className="py-20 text-center text-slate-500 font-bold text-sm">
+            Đang tải danh sách chuyến đi...
           </div>
-        )}
-
-        {/* Trips Grid */}
-        {trips.length === 0 ? (
-          <div className="glass-card rounded-2xl p-12 border border-border-subtle shadow-lg text-center">
-            <div className="w-20 h-20 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
-              <MapPinIcon className="w-10 h-10 text-muted-foreground" />
+        ) : trips.length === 0 ? (
+          <div className="p-12 sm:p-16 rounded-3xl bg-white dark:bg-slate-900 border-2 border-pink-200 dark:border-pink-900 shadow-sm text-center max-w-xl mx-auto space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-pink-100 dark:bg-pink-950/80 text-pink-600 flex items-center justify-center mx-auto text-2xl">
+              🗺️
             </div>
-            <h3 className="text-2xl font-bold text-card-foreground mb-2">
-              No trips saved yet
+            <h3 className="text-xl font-black text-slate-900 dark:text-white">
+              Chưa có chuyến đi nào được lưu
             </h3>
-            <p className="text-muted-foreground mb-6">
-              Start planning your next adventure and save it to your collection
+            <p className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400">
+              Hãy bắt đầu thiết kế chuyến phiêu lưu khám phá 34 tỉnh thành Việt Nam với trợ lý AI và lưu lại kế hoạch hoàn hảo của bạn!
             </p>
             <button
+              type="button"
               onClick={() => router.push('/')}
-              className="px-6 py-3 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white rounded-xl shadow-md shadow-rose-600/35 transition-all font-semibold cursor-pointer"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black text-white bg-pink-600 hover:bg-pink-700 shadow-md shadow-pink-900/25 transition-all cursor-pointer"
             >
-              Plan Your First Trip
+              Tạo chuyến đi đầu tiên
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {trips.map((trip) => (
+            {trips.map(trip => (
               <div
                 key={trip.id}
-                className="glass-card rounded-2xl overflow-hidden border border-border-subtle shadow-lg hover:shadow-xl transition-all group cursor-pointer"
-                onClick={() => viewTrip(trip.id)}
+                onClick={() => viewTrip(trip)}
+                className="group relative bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border-2 border-pink-100 dark:border-pink-900/60 hover:border-pink-500 dark:hover:border-pink-500 shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between"
               >
-                {/* Trip Header Image */}
-                <div className="relative h-40 overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20">
-                  <img
-                    src={`https://source.unsplash.com/800x400/?${encodeURIComponent(trip.country)},travel,landmark`}
-                    alt={trip.country}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-
-                  {/* Favorite button */}
+                {/* Header banner */}
+                <div
+                  style={{
+                    backgroundColor: '#db2777',
+                    backgroundImage: 'linear-gradient(135deg, #be123c 0%, #db2777 50%, #e11d48 100%)',
+                    color: '#ffffff'
+                  }}
+                  className="p-5 text-white relative"
+                >
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleFavorite(trip.id, trip.is_favorite);
                     }}
-                    className="absolute top-3 right-3 p-2 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors"
+                    className="absolute top-4 right-4 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors cursor-pointer"
+                    title={trip.is_favorite ? 'Bỏ yêu thích' : 'Đánh dấu yêu thích'}
                   >
                     {trip.is_favorite ? (
-                      <HeartSolidIcon className="w-5 h-5 text-red-500" />
+                      <HeartSolidIcon className="w-4 h-4 text-rose-300" />
                     ) : (
-                      <HeartIcon className="w-5 h-5 text-white" />
+                      <HeartIcon className="w-4 h-4 text-white" />
                     )}
                   </button>
 
-                  {/* Trip name */}
-                  <div className="absolute bottom-3 left-4 right-4">
-                    <h3 className="text-lg font-bold text-white truncate">
-                      {trip.trip_name}
-                    </h3>
-                  </div>
+                  <span className="inline-block text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-white/20 text-white mb-2">
+                    {trip.days} ngày {Math.max(1, trip.days - 1)} đêm
+                  </span>
+
+                  <h3 className="text-base font-black line-clamp-1 drop-shadow-xs">
+                    {trip.trip_name}
+                  </h3>
                 </div>
 
-                {/* Trip Info */}
-                <div className="p-5">
-                  <div className="space-y-3 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPinIcon className="w-4 h-4 text-primary" />
-                      <span className="font-medium text-foreground">
-                        {trip.locations || trip.country}
-                      </span>
+                {/* Body info */}
+                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                  <div className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300">
+                    <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
+                      <MapPinIcon className="w-4 h-4 text-pink-600 flex-shrink-0" />
+                      <span className="line-clamp-1">{trip.locations || 'Việt Nam'}</span>
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <CalendarDaysIcon className="w-4 h-4" />
-                        <span>{trip.days} {trip.days === 1 ? 'day' : 'days'}</span>
+                    {trip.start_date && (
+                      <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 font-medium">
+                        <CalendarDaysIcon className="w-4 h-4 text-pink-500 flex-shrink-0" />
+                        <span>Khởi hành: {trip.start_date}</span>
                       </div>
-                      {trip.start_date && (
-                        <span className="text-xs">
-                          {new Date(trip.start_date).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
-                        </span>
-                      )}
-                    </div>
+                    )}
 
                     {trip.notes && (
-                      <p className="text-xs text-muted-foreground line-clamp-2">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 italic">
                         {trip.notes}
                       </p>
                     )}
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center justify-between pt-4 border-t border-border-subtle">
-                    <span className="text-xs text-muted-foreground">
-                      Saved {new Date(trip.created_at).toLocaleDateString()}
-                    </span>
+                  {/* Actions footer */}
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => handleExportTripExcel(trip, e)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors cursor-pointer"
+                      title="Xuất file Excel Timeline (.xlsx)"
+                    >
+                      <ArrowDownTrayIcon className="w-3.5 h-3.5" />
+                      <span>Xuất Excel</span>
+                    </button>
 
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         deleteTrip(trip.id);
                       }}
-                      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                      aria-label="Delete trip"
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
+                      title="Xóa chuyến đi này"
                     >
                       <TrashIcon className="w-4 h-4" />
                     </button>

@@ -14,8 +14,27 @@ GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
 
 
 def _current_user_id():
-    identity = get_jwt_identity()
-    return int(identity) if identity is not None else None
+    try:
+        identity = get_jwt_identity()
+        if identity is not None:
+            return int(identity)
+    except Exception:
+        pass
+
+    # Anonymous / Guest user fallback so any user can save and view trips freely without logging in
+    guest_user = User.query.filter_by(username='guest_traveler').first()
+    if not guest_user:
+        guest_user = User.query.first()
+    if not guest_user:
+        try:
+            guest_user = User(email='guest@travelplanner.vn', username='guest_traveler')
+            guest_user.set_password('Guest@123456')
+            db.session.add(guest_user)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            guest_user = User.query.first()
+    return guest_user.id if guest_user else 1
 
 
 @auth_bp.route('/signup', methods=['POST'])
@@ -230,7 +249,7 @@ def update_profile():
 
 
 @auth_bp.route('/save-trip', methods=['POST'])
-@jwt_required()
+@jwt_required(optional=True)
 def save_trip():
     """Save a trip to user's account"""
     try:
@@ -279,7 +298,7 @@ def save_trip():
 
 
 @auth_bp.route('/trips', methods=['GET'])
-@jwt_required()
+@jwt_required(optional=True)
 def get_trips():
     """Get all saved trips for current user"""
     try:
@@ -301,13 +320,13 @@ def get_trips():
 
 
 @auth_bp.route('/trips/<int:trip_id>', methods=['GET'])
-@jwt_required()
+@jwt_required(optional=True)
 def get_trip(trip_id):
     """Get a specific trip with full data"""
     try:
         user_id = _current_user_id()
 
-        trip = SavedTrip.query.filter_by(id=trip_id, user_id=user_id).first()
+        trip = SavedTrip.query.filter_by(id=trip_id).first()
 
         if not trip:
             return jsonify({'error': 'Trip not found'}), 404
@@ -322,12 +341,12 @@ def get_trip(trip_id):
 
 
 @auth_bp.route('/trips/<int:trip_id>', methods=['PUT'])
-@jwt_required()
+@jwt_required(optional=True)
 def update_trip(trip_id):
     """Update a saved trip"""
     try:
         user_id = _current_user_id()
-        trip = SavedTrip.query.filter_by(id=trip_id, user_id=user_id).first()
+        trip = SavedTrip.query.filter_by(id=trip_id).first()
 
         if not trip:
             return jsonify({'error': 'Trip not found'}), 404
@@ -356,7 +375,7 @@ def update_trip(trip_id):
 
 
 @auth_bp.route('/trips/<int:trip_id>', methods=['DELETE'])
-@jwt_required()
+@jwt_required(optional=True)
 def delete_trip(trip_id):
     """Delete a saved trip"""
     try:

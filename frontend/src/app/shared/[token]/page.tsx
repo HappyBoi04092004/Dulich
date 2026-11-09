@@ -15,8 +15,10 @@ import {
   NewspaperIcon,
   CurrencyDollarIcon,
   BuildingOfficeIcon,
-  UserCircleIcon
+  UserCircleIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
+import { exportItineraryToExcel } from '@/utils/excelExport';
 
 const MapEmbed = dynamic(() => import('@/components/trip/MapEmbed'), {
   ssr: false,
@@ -153,9 +155,31 @@ export default function SharedTripPage() {
           )}
 
           {/* Trip Title */}
-          <h1 className="text-4xl font-bold bg-gradient-to-br from-foreground to-primary bg-clip-text text-transparent mb-2">
-            {tripData.tripName || `Trip to ${tripData.country}`}
-          </h1>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
+            <h1 className="text-3xl sm:text-4xl font-black bg-gradient-to-br from-foreground to-primary bg-clip-text text-transparent">
+              {tripData.tripName || `Lịch trình du lịch ${tripData.country}`}
+            </h1>
+            <button
+              type="button"
+              onClick={() => {
+                exportItineraryToExcel({
+                  tripName: tripData.tripName || `Lịch trình du lịch ${tripData.country}`,
+                  country: tripData.country,
+                  locations: tripData.locations,
+                  startDate: tripData.startDate,
+                  totalDays: Number(tripData.days) || 1,
+                  originCity: tripData.origin,
+                  tripPace: tripData.tripPace,
+                  itinerary: tripData.result?.itinerary || {},
+                  budget: tripData.result?.budget
+                });
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-md transition-all cursor-pointer w-fit"
+            >
+              <ArrowDownTrayIcon className="w-4 h-4" />
+              <span>Xuất Timeline Excel (.xlsx)</span>
+            </button>
+          </div>
 
           {/* Trip Details */}
           <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
