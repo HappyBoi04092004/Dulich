@@ -395,3 +395,4 @@ export function exportItineraryToExcel(data: ExcelExportTripData): void {
 
   XLSX.writeFile(wb, fileName);
 }
+
