@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Vietnam Travel Planner",
-  description: "Trợ lý lập kế hoạch du lịch thông minh Việt Nam",
+  title: "AI Du Lịch Việt Nam",
+  description: "Nền tảng du lịch và trợ lý AI thông minh 34 tỉnh/thành Việt Nam",
   icons: {
     icon: '/logo.png',
     apple: '/logo.png',

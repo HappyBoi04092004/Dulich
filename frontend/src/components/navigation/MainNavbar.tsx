@@ -32,36 +32,33 @@ export default function MainNavbar() {
 
   return (
     <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b-2 border-pink-200/80 dark:border-pink-900/60 sticky top-0 z-40 shadow-xs transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
         {/* Brand Logo & Title */}
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-3 group">
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0">
             <div
               style={{
                 backgroundColor: '#db2777',
                 backgroundImage: 'linear-gradient(135deg, #e11d48 0%, #db2777 50%, #ec4899 100%)'
               }}
-              className="relative w-11 h-11 rounded-full p-[2.5px] shadow-md shadow-pink-500/30 group-hover:scale-105 transition-transform flex-shrink-0 ring-2 ring-pink-400/50"
+              className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full p-[2.5px] shadow-md shadow-pink-500/30 group-hover:scale-105 transition-transform flex-shrink-0 ring-2 ring-pink-400/50"
             >
               <img
                 src="/logo.png"
-                alt="Logo AI Vietnam Travel Planner"
+                alt="Logo AI Du Lịch Việt Nam"
                 className="w-full h-full object-cover rounded-full bg-slate-900"
               />
             </div>
-            <div>
-              <span className="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white block leading-tight">
-                AI Vietnam <span className="bg-gradient-to-r from-pink-600 via-rose-600 to-pink-500 bg-clip-text text-transparent">Travel Planner</span>
-              </span>
-              <span className="text-[10px] sm:text-[10.5px] text-pink-700 dark:text-pink-400 font-extrabold uppercase tracking-wider block">
-                Nền tảng du lịch 34 Tỉnh/Thành
+            <div className="flex items-center gap-2 whitespace-nowrap flex-shrink-0">
+              <span className="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white whitespace-nowrap">
+                AI Du Lịch <span className="bg-gradient-to-r from-pink-600 via-rose-600 to-pink-500 bg-clip-text text-transparent">Việt Nam</span>
               </span>
             </div>
           </Link>
         </div>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden xl:flex items-center gap-1">
+        <nav className="hidden xl:flex items-center gap-1 flex-shrink-0">
           {NAV_LINKS.map(link => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -69,7 +66,7 @@ export default function MainNavbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black transition-all ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-black transition-all whitespace-nowrap ${
                   isActive
                     ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-sm shadow-pink-600/30 font-black'
                     : 'text-slate-700 dark:text-slate-300 hover:text-pink-600 dark:hover:text-pink-400 hover:bg-pink-50/70 dark:hover:bg-pink-950/40'
@@ -83,7 +80,7 @@ export default function MainNavbar() {
         </nav>
 
         {/* Right Action Icons & Theme Toggle */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
           <Link
             href="/saved-trips"
             className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
