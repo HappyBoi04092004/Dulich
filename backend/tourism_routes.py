@@ -193,14 +193,14 @@ def get_province_costs(province_id):
             'status': 'success',
             'data': {
                 'province_id': province_id,
-                'daily_budget_economy': 550000,
-                'daily_budget_standard': 1200000,
-                'daily_budget_luxury': 3200000,
-                'hotel_avg_economy': 350000,
-                'hotel_avg_standard': 850000,
-                'hotel_avg_luxury': 2500000,
-                'meal_avg_per_day': 250000,
-                'transport_local_avg': 150000
+                'daily_budget_economy': 240000,
+                'daily_budget_standard': 480000,
+                'daily_budget_luxury': 1400000,
+                'hotel_avg_economy': 180000,
+                'hotel_avg_standard': 380000,
+                'hotel_avg_luxury': 1400000,
+                'meal_avg_per_day': 140000,
+                'transport_local_avg': 75000
             }
         })
 

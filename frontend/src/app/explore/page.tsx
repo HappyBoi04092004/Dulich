@@ -162,8 +162,36 @@ export default function ExploreProvincesPage() {
     }
   };
 
-  const handleStartTripAtProvince = (pName: string) => {
-    router.push('/');
+  const handleStartTripAtProvince = (pIdentifier: string) => {
+    if (!pIdentifier) {
+      router.push('/');
+      return;
+    }
+    const target = pIdentifier.trim().toLowerCase();
+    const dest = VIETNAM_DESTINATIONS.find(d =>
+      d.id.toLowerCase() === target ||
+      d.name.toLowerCase() === target ||
+      d.name.toLowerCase().includes(target) ||
+      target.includes(d.name.toLowerCase())
+    );
+
+    if (dest) {
+      try {
+        const key = 'vietnam_trip_wizard_v3_34provinces';
+        const saved = sessionStorage.getItem(key);
+        const parsed = saved ? JSON.parse(saved) : {};
+        sessionStorage.setItem(key, JSON.stringify({
+          ...parsed,
+          selectedDestinations: [dest],
+          currentStep: 2
+        }));
+      } catch (e) {
+        console.error('Failed to set destination in session:', e);
+      }
+      router.push(`/?province=${dest.id}`);
+    } else {
+      router.push('/');
+    }
   };
 
   return (

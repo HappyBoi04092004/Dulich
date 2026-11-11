@@ -231,21 +231,52 @@ def seed_complete_database():
             province.best_season = "Tháng 9 - Tháng 4 (Mùa mát mẻ & lễ hội)" if p['region'] == 'North' else "Tháng 1 - Tháng 8 (Mùa khô & biển đẹp)"
             province.featured = p['provinceType'] == 'city' or p_id in ['laocai', 'quangninh', 'ninhbinh', 'lamdong', 'danang', 'khanhhoa', 'angiang']
 
-            # Cost guidelines
-            is_big_city = p['provinceType'] == 'city' or p_id in ['danang', 'lamdong', 'khanhhoa']
+            # Cost guidelines - Realistic regional market rates
+            is_tier1 = p_id in ['hanoi', 'hochiminh', 'danang', 'khanhhoa', 'quangninh', 'lamdong']
+            is_tier2 = p_id in ['haiphong', 'bacninh', 'hungyen', 'ninhbinh', 'dongnai', 'tayninh']
+            is_tier3 = p_id in ['thanhhoa', 'nghean', 'hatinh', 'quangtri', 'hue', 'quangngai', 'gialai', 'daklak']
+
             cost_g = CostGuideline.query.filter_by(province_id=p_id).first()
             if not cost_g:
                 cost_g = CostGuideline(province_id=p_id)
                 db.session.add(cost_g)
 
-            cost_g.daily_budget_economy = 650000 if is_big_city else 450000
-            cost_g.daily_budget_standard = 1500000 if is_big_city else 1000000
-            cost_g.daily_budget_luxury = 3800000 if is_big_city else 2500000
-            cost_g.hotel_avg_economy = 350000 if is_big_city else 280000
-            cost_g.hotel_avg_standard = 950000 if is_big_city else 700000
-            cost_g.hotel_avg_luxury = 3000000 if is_big_city else 1800000
-            cost_g.meal_avg_per_day = 320000 if is_big_city else 220000
-            cost_g.transport_local_avg = 160000 if is_big_city else 120000
+            if is_tier1:
+                cost_g.hotel_avg_economy = 220000
+                cost_g.hotel_avg_standard = 480000
+                cost_g.hotel_avg_luxury = 1800000
+                cost_g.meal_avg_per_day = 180000
+                cost_g.transport_local_avg = 100000
+                cost_g.daily_budget_economy = 290000
+                cost_g.daily_budget_standard = 580000
+                cost_g.daily_budget_luxury = 1800000
+            elif is_tier2:
+                cost_g.hotel_avg_economy = 180000
+                cost_g.hotel_avg_standard = 380000
+                cost_g.hotel_avg_luxury = 1400000
+                cost_g.meal_avg_per_day = 150000
+                cost_g.transport_local_avg = 80000
+                cost_g.daily_budget_economy = 250000
+                cost_g.daily_budget_standard = 490000
+                cost_g.daily_budget_luxury = 1400000
+            elif is_tier3:
+                cost_g.hotel_avg_economy = 160000
+                cost_g.hotel_avg_standard = 340000
+                cost_g.hotel_avg_luxury = 1300000
+                cost_g.meal_avg_per_day = 140000
+                cost_g.transport_local_avg = 75000
+                cost_g.daily_budget_economy = 230000
+                cost_g.daily_budget_standard = 450000
+                cost_g.daily_budget_luxury = 1300000
+            else:
+                cost_g.hotel_avg_economy = 150000
+                cost_g.hotel_avg_standard = 320000
+                cost_g.hotel_avg_luxury = 1200000
+                cost_g.meal_avg_per_day = 130000
+                cost_g.transport_local_avg = 70000
+                cost_g.daily_budget_economy = 210000
+                cost_g.daily_budget_standard = 420000
+                cost_g.daily_budget_luxury = 1200000
 
         db.session.commit()
         print(f"Successfully seeded all {len(provinces_data)} provinces with full metadata & budget guidelines!")
