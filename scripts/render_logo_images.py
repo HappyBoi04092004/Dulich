@@ -25,3 +25,4 @@ def render_logo():
 
 if __name__ == '__main__':
     render_logo()
+
