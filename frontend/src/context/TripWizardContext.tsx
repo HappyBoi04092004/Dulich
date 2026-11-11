@@ -93,9 +93,20 @@ export function TripWizardProvider({ children }: { children: React.ReactNode }) 
   const [state, setState] = useState<TripWizardState>(defaultState);
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Restore from sessionStorage on client load
+  // Restore from sessionStorage on client load and check URL parameters for province selection
   useEffect(() => {
     try {
+      const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const provParam = urlParams?.get('province') || urlParams?.get('dest');
+      const paramDest = provParam
+        ? VIETNAM_DESTINATIONS.find(d =>
+            d.id.toLowerCase() === provParam.toLowerCase() ||
+            d.name.toLowerCase() === provParam.toLowerCase() ||
+            d.name.toLowerCase().includes(provParam.toLowerCase()) ||
+            provParam.toLowerCase().includes(d.id.toLowerCase())
+          )
+        : null;
+
       const saved = sessionStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
@@ -104,12 +115,16 @@ export function TripWizardProvider({ children }: { children: React.ReactNode }) 
           VIETNAM_DESTINATIONS.some(vd => vd.id === d.id)
         );
 
+        const targetDests = paramDest
+          ? [paramDest]
+          : (validDests.length > 0 ? validDests : [VIETNAM_DESTINATIONS[0]]);
+
         setState(prev => ({
           ...prev,
           ...parsed,
           isMapFullscreen: false, // Map should always start in normal non-fullscreen mode
-          selectedDestinations: validDests.length > 0 ? validDests : [VIETNAM_DESTINATIONS[0]],
-          currentStep: parsed.currentStep || 1
+          selectedDestinations: targetDests,
+          currentStep: paramDest ? 2 : (parsed.currentStep || 1)
         }));
       } else {
         // Set default dates: tomorrow to +4 days (5 days trip)
@@ -125,7 +140,8 @@ export function TripWizardProvider({ children }: { children: React.ReactNode }) 
           startDate: startStr,
           returnDate: returnStr,
           totalDays: 5,
-          selectedDestinations: [VIETNAM_DESTINATIONS[0]]
+          selectedDestinations: paramDest ? [paramDest] : [VIETNAM_DESTINATIONS[0]],
+          currentStep: paramDest ? 2 : 1
         }));
       }
     } catch (e) {

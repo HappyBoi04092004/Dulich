@@ -511,8 +511,13 @@ export default function ExploreProvincesPage() {
                   <button
                     type="button"
                     onClick={() => {
+                      const pKey = activeProvince.province?.id || activeProvince.province?.name;
                       setActiveProvince(null);
-                      router.push('/');
+                      if (pKey) {
+                        handleStartTripAtProvince(pKey);
+                      } else {
+                        router.push('/');
+                      }
                     }}
                     style={{
                       backgroundColor: '#db2777',

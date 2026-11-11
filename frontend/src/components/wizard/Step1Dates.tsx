@@ -23,6 +23,7 @@ export default function Step1Dates() {
     setOriginCity,
     tripPace,
     setTripPace,
+    selectedDestinations,
     nextStep,
     canProceedStep1
   } = useTripWizard();
@@ -257,6 +258,40 @@ export default function Step1Dates() {
           </div>
         </div>
       </div>
+
+      {/* Intended Destination Preview */}
+      {selectedDestinations && selectedDestinations.length > 0 && (
+        <div className="bg-white/95 dark:bg-gray-900/95 p-5 rounded-3xl border-2 border-pink-200/80 dark:border-pink-900/60 shadow-lg shadow-pink-500/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center text-white shadow-md shadow-pink-500/30 flex-shrink-0">
+              <MapPinIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[11px] font-black uppercase tracking-wider text-pink-600 dark:text-pink-400">
+                Điểm đến dự kiến khám phá ({selectedDestinations.length} tỉnh/thành)
+              </div>
+              <div className="text-sm sm:text-base font-black text-slate-900 dark:text-white flex flex-wrap gap-1.5 items-center mt-1">
+                {selectedDestinations.map(d => (
+                  <span
+                    key={d.id}
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-pink-50 dark:bg-pink-950/60 text-pink-700 dark:text-pink-300 border border-pink-200 dark:border-pink-800 text-xs font-black shadow-xs"
+                  >
+                    📍 {d.name} <span className="text-[10px] text-pink-500">({d.regionName})</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={nextStep}
+            className="text-xs font-black text-pink-600 dark:text-pink-400 hover:text-pink-700 underline flex items-center gap-1 cursor-pointer flex-shrink-0"
+          >
+            <span>Xem & Đổi tỉnh trên Bản đồ</span>
+            <ArrowRightIcon className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Summary Card & Weather Notification */}
       {startDate && returnDate && totalDays > 0 && (
