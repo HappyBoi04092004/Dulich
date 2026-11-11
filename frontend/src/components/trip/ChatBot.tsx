@@ -129,7 +129,7 @@ export default function ChatBot({ currentTrip, onTripUpdate }: ChatBotProps) {
           aria-label="Open chat"
         >
           <div className="w-9 h-9 rounded-full overflow-hidden ring-1 ring-white">
-            <img src="/logo.jpg" alt="Logo" className="w-full h-full object-cover object-top" />
+            <img src="/logo.png" alt="Robot AI" className="w-full h-full object-cover" />
           </div>
         </button>
       )}
@@ -148,7 +148,7 @@ export default function ChatBot({ currentTrip, onTripUpdate }: ChatBotProps) {
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white shadow-xs flex-shrink-0">
-                <img src="/logo.jpg" alt="Logo" className="w-full h-full object-cover object-top" />
+                <img src="/logo.png" alt="Robot AI" className="w-full h-full object-cover" />
               </div>
               <div className="min-w-0">
                 <span className="font-black text-sm text-white drop-shadow-sm block leading-tight whitespace-nowrap">Trợ lý AI Du lịch Việt Nam</span>

@@ -425,15 +425,15 @@ export default function WizardAIChatbot() {
           >
             <div className="w-full h-full rounded-full overflow-hidden ring-1 ring-white/90 bg-rose-950">
               <img
-                src="/logo.jpg"
-                alt="Avatar Trợ lý AI"
-                className="w-full h-full object-cover object-top rounded-full"
+                src="/logo.png"
+                alt="Robot Trợ lý AI"
+                className="w-full h-full object-cover rounded-full"
               />
             </div>
             <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-400 ring-2 ring-white animate-pulse" />
           </button>
         ) : (
-          /* Chế độ thông thường: Nút nổi có kèm text và avatar con gái */
+          /* Chế độ thông thường: Nút nổi có kèm text và avatar robot AI */
           <button
             type="button"
             onClick={() => setIsOpen(true)}
@@ -447,9 +447,9 @@ export default function WizardAIChatbot() {
           >
             <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white flex-shrink-0 shadow-xs bg-rose-950">
               <img
-                src="/logo.jpg"
-                alt="Avatar Trợ lý AI"
-                className="w-full h-full object-cover object-top rounded-full"
+                src="/logo.png"
+                alt="Robot Trợ lý AI"
+                className="w-full h-full object-cover rounded-full"
               />
             </div>
             <span className="text-sm tracking-wide drop-shadow-xs font-black">Hỏi Trợ lý AI Du lịch</span>
@@ -469,9 +469,9 @@ export default function WizardAIChatbot() {
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="relative w-9 h-9 min-w-9 min-h-9 rounded-full ring-2 ring-white shadow-sm flex-shrink-0 overflow-hidden bg-rose-950">
                 <img
-                  src="/logo.jpg"
-                  alt="Logo Trợ lý AI"
-                  className="w-full h-full object-cover object-top rounded-full"
+                  src="/logo.png"
+                  alt="Robot Trợ lý AI"
+                  className="w-full h-full object-cover rounded-full"
                 />
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-rose-900" />
               </div>

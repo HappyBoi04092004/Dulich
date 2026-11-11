@@ -19,8 +19,8 @@ export const metadata: Metadata = {
   title: "AI Vietnam Travel Planner",
   description: "Trợ lý lập kế hoạch du lịch thông minh Việt Nam",
   icons: {
-    icon: '/logo.jpg',
-    apple: '/logo.jpg',
+    icon: '/logo.png',
+    apple: '/logo.png',
   }
 };
 

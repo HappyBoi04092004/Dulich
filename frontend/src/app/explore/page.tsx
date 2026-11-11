@@ -50,7 +50,7 @@ const STATIC_PROVINCES: ProvinceItem[] = VIETNAM_DESTINATIONS.map(p => ({
   merged_from: p.mergedFrom || '',
   lat: p.lat,
   lng: p.lng,
-  image_url: p.image || '/logo.jpg',
+  image_url: p.image || '/logo.png',
   description: p.description,
   geography: `Khu vực ${p.regionName || p.region}, địa hình đặc trưng với các cảnh quan thiên nhiên và di sản nổi bật.`,
   climate: 'Nhiệt đới gió mùa, thời tiết phân mùa rõ rệt thích hợp du lịch quanh năm.',
@@ -256,7 +256,7 @@ export default function ExploreProvincesPage() {
                 {/* Card Image */}
                 <div className="relative h-48 w-full overflow-hidden bg-slate-950">
                   <img
-                    src={p.image_url || '/logo.jpg'}
+                    src={p.image_url || '/logo.png'}
                     alt={p.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
@@ -347,7 +347,7 @@ export default function ExploreProvincesPage() {
               {/* Modal Banner Header */}
               <div className="relative h-56 sm:h-64 w-full overflow-hidden bg-slate-900">
                 <img
-                  src={activeProvince.province?.image_url || '/logo.jpg'}
+                  src={activeProvince.province?.image_url || '/logo.png'}
                   alt={activeProvince.province?.name}
                   className="w-full h-full object-cover"
                 />

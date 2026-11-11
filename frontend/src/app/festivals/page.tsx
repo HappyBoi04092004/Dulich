@@ -171,7 +171,7 @@ export default function FestivalsPage() {
                 {/* Image & Header */}
                 <div className="relative h-48 w-full overflow-hidden bg-slate-950">
                   <img
-                    src={f.image_url || '/logo.jpg'}
+                    src={f.image_url || '/logo.png'}
                     alt={f.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"

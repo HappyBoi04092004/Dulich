@@ -44,9 +44,9 @@ export default function MainNavbar() {
               className="relative w-11 h-11 rounded-full p-[2.5px] shadow-md shadow-pink-500/30 group-hover:scale-105 transition-transform flex-shrink-0 ring-2 ring-pink-400/50"
             >
               <img
-                src="/logo.jpg"
+                src="/logo.png"
                 alt="Logo AI Vietnam Travel Planner"
-                className="w-full h-full object-cover object-top rounded-full bg-slate-900"
+                className="w-full h-full object-cover rounded-full bg-slate-900"
               />
             </div>
             <div>
